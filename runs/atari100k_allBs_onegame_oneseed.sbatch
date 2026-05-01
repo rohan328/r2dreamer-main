@@ -1,11 +1,11 @@
 #!/bin/bash
-#SBATCH --job-name=atari100k_full
+#SBATCH --job-name=atari100k_6run
 #SBATCH --partition=gpuql
 #SBATCH --gres=gpu:a100:1
 #SBATCH --cpus-per-task=8
 #SBATCH --mem=64G
 #SBATCH --time=24:00:00
-#SBATCH --array=0-779%20
+#SBATCH --array=0-5%6
 #SBATCH --output=logs/slurm-%x-%A_%a.out
 
 set -euo pipefail

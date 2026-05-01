@@ -1,9 +1,11 @@
 task: atari_alien
-steps: 4.1e5
+# Match official danijar/dreamerv3 `atari100k` preset: run.steps=1.1e5, envs=1, train_ratio=256,
+# eval_envs=4, eval_eps=1 (this repo uses eval_episode_num parallel eval envs; one episode each in trainer.eval).
+steps: 1.1e5
 env_num: 1
-eval_episode_num: 100
+eval_episode_num: 4
 action_repeat: 4
-train_ratio: 128
+train_ratio: 256
 time_limit: 108000
 
 seed: ${seed}

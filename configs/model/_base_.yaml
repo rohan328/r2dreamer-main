@@ -30,6 +30,7 @@ loss_scales:
   cpc: ${model.cpc.weight}
 
 cpc:
+  enabled: False
   weight: 1.0
   horizon: 3
   proj_dim: 512
@@ -43,6 +44,7 @@ rssm:
   img_layers: 2
   obs_layers: 1
   dyn_layers: 1
+  txl_mem_len: 16
   blocks: 8
   act: ${model.act}
   norm: ${model.norm}

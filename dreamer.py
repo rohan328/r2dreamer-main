@@ -27,7 +27,9 @@ class Dreamer(nn.Module):
         self.act_dim = act_space.n if hasattr(act_space, "n") else sum(act_space.shape)
         self.cpc_weight = float(config.cpc.weight)
         self.cpc_horizon = int(config.cpc.horizon)
-        self.use_cpc = str(config.rssm.backbone).lower() == "transformer_cpc"
+        cpc_enabled_cfg = bool(getattr(config.cpc, "enabled", False))
+        # Keep backward compatibility for existing transformer_cpc runs.
+        self.use_cpc = cpc_enabled_cfg or str(config.rssm.backbone).lower() == "transformer_cpc"
 
         # World model components
         shapes = {k: tuple(v.shape) for k, v in obs_space.spaces.items()}
@@ -212,6 +214,7 @@ class Dreamer(nn.Module):
         """Policy inference step."""
         # obs: dict of (B, *), state: (stoch: (B, S, K), deter: (B, D), prev_action: (B, A))
         torch.compiler.cudagraph_mark_step_begin()
+        self._frozen_rssm.clear_cache()
         p_obs = self.preprocess(obs)
         # (B, E)
         embed = self._frozen_encoder(p_obs)
@@ -445,6 +448,7 @@ class Dreamer(nn.Module):
     def _imagine(self, start, imag_horizon):
         """Roll out the policy in latent space."""
         # (B, S, K), (B, D)
+        self._frozen_rssm.clear_cache()
         feats = []
         actions = []
         stoch, deter = start

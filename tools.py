@@ -40,6 +40,29 @@ class Tee(io.TextIOBase):
         return any(hasattr(stream, "isatty") and stream.isatty() for stream in self._streams)
 
 
+class ConsoleLogHandle:
+    """Restore real stdout/stderr then close the mirror file (safe for atexit / shutdown)."""
+
+    def __init__(self, log_file, stdout_orig, stderr_orig):
+        self._log_file = log_file
+        self._stdout_orig = stdout_orig
+        self._stderr_orig = stderr_orig
+        self._closed = False
+
+    def close(self):
+        if self._closed:
+            return
+        self._closed = True
+        import sys
+
+        sys.stdout = self._stdout_orig
+        sys.stderr = self._stderr_orig
+        try:
+            self._log_file.close()
+        except Exception:
+            pass
+
+
 def setup_console_log(logdir, filename="console.log"):
     """Mirror stdout/stderr to a file under logdir.
 
@@ -48,17 +71,19 @@ def setup_console_log(logdir, filename="console.log"):
 
     Returns
     -------
-    file handle
-        The opened file handle so that the caller can manage its lifetime.
+    ConsoleLogHandle
+        Call ``.close()`` before interpreter exit to avoid shutdown-time writes
+        to a half-torn-down ``Tee`` (which can surface as ``unraisablehook`` noise).
     """
     import sys
 
+    stdout_orig, stderr_orig = sys.stdout, sys.stderr
     # Line-buffered text file for timely flushing.
     path = logdir / filename
     f = path.open("a", buffering=1)
-    sys.stdout = Tee(sys.stdout, f)
-    sys.stderr = Tee(sys.stderr, f)
-    return f
+    sys.stdout = Tee(stdout_orig, f)
+    sys.stderr = Tee(stderr_orig, f)
+    return ConsoleLogHandle(f, stdout_orig, stderr_orig)
 
 
 def to_np(x):
@@ -130,6 +155,7 @@ class Logger:
         self._logdir = logdir
         self._filename = filename
         self._writer = SummaryWriter(log_dir=str(logdir), max_queue=1000)
+        self._writer_closed = False
         self._last_step = None
         self._last_time = None
         self._scalars = {}
@@ -177,6 +203,16 @@ class Logger:
         self._scalars = {}
         self._images = {}
         self._videos = {}
+
+    def close(self):
+        """Flush and close TensorBoard writer (reduces noisy teardown on exit)."""
+        if self._writer_closed:
+            return
+        self._writer_closed = True
+        with contextlib.suppress(Exception):
+            self._writer.flush()
+        with contextlib.suppress(Exception):
+            self._writer.close()
 
     def _compute_fps(self, step):
         if self._last_step is None:

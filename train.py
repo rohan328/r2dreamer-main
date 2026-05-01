@@ -27,35 +27,46 @@ def main(config):
     logdir.mkdir(parents=True, exist_ok=True)
 
     # Mirror stdout/stderr to a file under logdir while keeping console output.
-    console_f = tools.setup_console_log(logdir, filename="console.log")
-    atexit.register(lambda: console_f.close())
+    console_log = tools.setup_console_log(logdir, filename="console.log")
+    atexit.register(console_log.close)
 
     print("Logdir", logdir)
 
-    logger = tools.Logger(logdir)
-    # save config
-    logger.log_hydra_config(config)
+    logger = None
+    train_envs = eval_envs = None
+    try:
+        logger = tools.Logger(logdir)
+        # save config
+        logger.log_hydra_config(config)
 
-    replay_buffer = Buffer(config.buffer)
+        replay_buffer = Buffer(config.buffer)
 
-    print("Create envs.")
-    train_envs, eval_envs, obs_space, act_space = make_envs(config.env)
+        print("Create envs.")
+        train_envs, eval_envs, obs_space, act_space = make_envs(config.env)
 
-    print("Simulate agent.")
-    agent = Dreamer(
-        config.model,
-        obs_space,
-        act_space,
-    ).to(config.device)
+        print("Simulate agent.")
+        agent = Dreamer(
+            config.model,
+            obs_space,
+            act_space,
+        ).to(config.device)
 
-    policy_trainer = OnlineTrainer(config.trainer, replay_buffer, logger, logdir, train_envs, eval_envs)
-    policy_trainer.begin(agent)
+        policy_trainer = OnlineTrainer(config.trainer, replay_buffer, logger, logdir, train_envs, eval_envs)
+        policy_trainer.begin(agent)
 
-    items_to_save = {
-        "agent_state_dict": agent.state_dict(),
-        "optims_state_dict": tools.recursively_collect_optim_state_dict(agent),
-    }
-    torch.save(items_to_save, logdir / "latest.pt")
+        items_to_save = {
+            "agent_state_dict": agent.state_dict(),
+            "optims_state_dict": tools.recursively_collect_optim_state_dict(agent),
+        }
+        torch.save(items_to_save, logdir / "latest.pt")
+    finally:
+        if train_envs is not None:
+            train_envs.close()
+        if eval_envs is not None:
+            eval_envs.close()
+        if logger is not None:
+            logger.close()
+        console_log.close()
 
 
 if __name__ == "__main__":

@@ -96,14 +96,21 @@ class S4Backbone(nn.Module):
 
     def forward(self, stoch, deter, action):
         bsz = action.shape[0]
+        dtype = deter.dtype
         stoch = stoch.reshape(bsz, -1)
         action = action / torch.clip(torch.abs(action), min=1.0).detach()
         u = self._inp(torch.cat([stoch, action], dim=-1))
         dt = torch.nn.functional.softplus(self._log_dt).unsqueeze(0) + 1e-4
         a = -torch.nn.functional.softplus(self._a_log).unsqueeze(0)
         exp_a = torch.exp(a * dt)
-        state = exp_a * deter + (1.0 - exp_a) * (self._b.unsqueeze(0) * u)
-        out = self._c.unsqueeze(0) * state + self._skip.unsqueeze(0) * deter
+        # Keep state update dtype aligned with recurrent state under AMP/compile.
+        u = u.to(dtype)
+        exp_a = exp_a.to(dtype)
+        b = self._b.unsqueeze(0).to(dtype)
+        c = self._c.unsqueeze(0).to(dtype)
+        skip = self._skip.unsqueeze(0).to(dtype)
+        state = exp_a * deter + (1.0 - exp_a) * (b * u)
+        out = c * state + skip * deter
         return self._norm(out)
 
 
@@ -129,14 +136,21 @@ class S5Backbone(nn.Module):
 
     def forward(self, stoch, deter, action):
         bsz = action.shape[0]
+        dtype = deter.dtype
         stoch = stoch.reshape(bsz, -1)
         action = action / torch.clip(torch.abs(action), min=1.0).detach()
         inp = self._inp(torch.cat([stoch, action], dim=-1))
         mixed = deter + self._v(self._u(deter))
         dt = torch.nn.functional.softplus(self._dt).unsqueeze(0) + 1e-4
         a = -torch.nn.functional.softplus(self._a_log).unsqueeze(0)
+        # Keep state update and gate input dtype aligned under AMP/compile.
+        inp = inp.to(dtype)
+        mixed = mixed.to(dtype)
+        dt = dt.to(dtype)
+        a = a.to(dtype)
         ssm = torch.exp(a * dt) * mixed + dt * inp
         joint = torch.cat([ssm, inp], dim=-1)
+        joint = joint.to(dtype)
         gate = torch.sigmoid(self._gate(joint))
         cand = torch.tanh(self._cand(joint))
         out = gate * cand + (1.0 - gate) * deter
@@ -165,6 +179,7 @@ class Mamba2Backbone(nn.Module):
 
     def forward(self, stoch, deter, action):
         bsz = action.shape[0]
+        dtype = deter.dtype
         stoch = stoch.reshape(bsz, -1)
         action = action / torch.clip(torch.abs(action), min=1.0).detach()
         x = self._token(torch.cat([stoch, action], dim=-1))
@@ -173,8 +188,16 @@ class Mamba2Backbone(nn.Module):
         b = torch.tanh(self._b_proj(x))
         c = self._c_proj(x)
         z = torch.sigmoid(self._z_proj(x))
+        # Keep selective state-space update dtype aligned under AMP/compile.
+        x = x.to(dtype)
+        dt = dt.to(dtype)
+        a = a.to(dtype)
+        b = b.to(dtype)
+        c = c.to(dtype)
+        z = z.to(dtype)
+        skip = self._skip.unsqueeze(0).to(dtype)
         state = torch.exp(a * dt) * deter + dt * b * x
-        y = c * state + self._skip.unsqueeze(0) * x
+        y = c * state + skip * x
         out = z * y + (1.0 - z) * deter
         return self._norm(out)
 

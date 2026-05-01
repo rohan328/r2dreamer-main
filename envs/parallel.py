@@ -37,6 +37,12 @@ class ParallelEnv:
                 td[key] = td[key].unsqueeze(-1)
         return td
 
+    def close(self):
+        """Terminate subprocess workers before process exit (cleaner than atexit-only)."""
+        for e in self.envs:
+            with contextlib.suppress(Exception):
+                e.close()
+
     def step(self, action, done):
         """Step all environments.
 

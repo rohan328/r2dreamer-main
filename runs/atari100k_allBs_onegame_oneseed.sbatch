@@ -86,9 +86,9 @@ python -u train.py \
   backbone="${backbone}" \
   seed="${seed}" \
   model=size200M \
-  model.compile=False \
+  model.compile=True \
   device=cuda:0 \
-  buffer.storage_device=cpu \
+  buffer.storage_device=cuda:0 \
   logdir="${run_logdir}"
 
 echo "Completed ArrayTask=${SLURM_ARRAY_TASK_ID}"

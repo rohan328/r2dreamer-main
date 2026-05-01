@@ -19,6 +19,7 @@ cd "${SLURM_SUBMIT_DIR:-$PWD}"
 
 # Unbuffered python output so logs are realtime in Slurm output files.
 export PYTHONUNBUFFERED=1
+export PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True
 
 # ---------- Sweep settings ----------
 DATE="$(date +%Y%m%d)"
@@ -104,9 +105,9 @@ python -u train.py \
   backbone="${backbone}" \
   seed="${seed}" \
   model=size200M \
-  model.compile=True \
+  model.compile=False \
   device=cuda:0 \
-  buffer.storage_device=cuda:0 \
+  buffer.storage_device=cpu \
   logdir="${run_logdir}"
 
 echo "Completed ArrayTask=${SLURM_ARRAY_TASK_ID}"

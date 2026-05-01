@@ -7,7 +7,7 @@ SEED_START=0
 SEED_END=400
 SEED_STEP=100
 MODAL=vision # vision/proprio
-METHOD=r2dreamer
+BACKBONE=gru
 
 # ==== Tasks ====
 tasks=(
@@ -41,11 +41,11 @@ do
         CUDA_VISIBLE_DEVICES=$GPU_ID MUJOCO_GL=egl MUJOCO_EGL_DEVICE_ID=$GPU_ID python train.py \
             env=dmc_${MODAL} \
             env.task=$task \
-            logdir=logdir/${DATE}_${METHOD}_${task#dmc_}_$seed \
+            logdir=logdir/${DATE}_${BACKBONE}_${task#dmc_}_$seed \
             model.compile=True \
             device=cuda:0 \
             buffer.storage_device=cuda:0 \
-            model.rep_loss=${METHOD} \
+            backbone=${BACKBONE} \
             seed=$seed
     done
 done

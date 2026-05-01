@@ -6,7 +6,7 @@ DATE=$(date +%m%d) # auto complete
 SEED_START=0
 SEED_END=400
 SEED_STEP=100
-METHOD=r2dreamer
+BACKBONE=gru
 
 # ==== Tasks ====
 tasks=(
@@ -70,11 +70,11 @@ do
         CUDA_VISIBLE_DEVICES=$GPU_ID MUJOCO_GL=egl MUJOCO_EGL_DEVICE_ID=$GPU_ID python train.py \
             env=metaworld \
             env.task=$task \
-            logdir=logdir/${DATE}_${METHOD}_${task#metaworld_}_$seed \
+            logdir=logdir/${DATE}_${BACKBONE}_${task#metaworld_}_$seed \
             model.compile=True \
             device=cuda:0 \
             buffer.storage_device=cuda:0 \
-            model.rep_loss=${METHOD} \
+            backbone=${BACKBONE} \
             seed=$seed
     done
 done

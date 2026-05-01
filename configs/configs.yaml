@@ -1,6 +1,7 @@
 defaults:
-  - env: dmc_vision
+  - env: atari100k
   - model: size12M
+  - backbone: gru
   # Disable Hydra's Python logging-to-file (train.log)
   - override hydra/job_logging: disabled
   - _self_

@@ -1,6 +1,6 @@
-# R2-Dreamer: Redundancy-Reduced World Models without Decoders or Augmentation
+# DreamerV3 Backbone Ablation (Atari100k-first)
 
-This repository provides a PyTorch implementation of [R2-Dreamer][r2dreamer] (ICLR 2026), a computationally efficient world model that achieves high performance on continuous control benchmarks. It also includes an efficient PyTorch DreamerV3 reproduction that trains **~5x faster** than a widely used [codebase][dreamerv3-torch], along with other baselines. Selecting R2-Dreamer via the config provides an additional **~1.6x speedup** over this baseline.
+This repository provides a PyTorch DreamerV3 implementation with a unified RSSM backbone interface for controlled architecture ablations. The current phase is Atari100k-first and supports the following backbones: `gru`, `s4`, `s5`, `mamba2`, `transformer`, and `transformer_cpc`.
 
 ## Instructions
 
@@ -24,12 +24,16 @@ Monitoring results:
 tensorboard --logdir ./logdir
 ```
 
-Switching algorithms:
+Switching backbones:
 
 ```bash
-# Choose an algorithm via model.rep_loss:
-# r2dreamer|dreamer|infonce|dreamerpro
-python3 train.py model.rep_loss=r2dreamer
+# Default env is Atari100k. Choose backbone via Hydra group:
+python3 train.py backbone=gru
+python3 train.py backbone=s4
+python3 train.py backbone=s5
+python3 train.py backbone=mamba2
+python3 train.py backbone=transformer
+python3 train.py backbone=transformer_cpc
 ```
 
 For easier code reading, inline tensor shape annotations are provided. See [`docs/tensor_shapes.md`](docs/tensor_shapes.md).
@@ -94,5 +98,4 @@ url={https://openreview.net/forum?id=Je2QqXrcQq}
 }
 ```
 
-[r2dreamer]: https://openreview.net/forum?id=Je2QqXrcQq&referrer=%5BAuthor%20Console%5D(%2Fgroup%3Fid%3DICLR.cc%2F2026%2FConference%2FAuthors%23your-submissions)
 [dreamerv3-torch]: https://github.com/NM512/dreamerv3-torch

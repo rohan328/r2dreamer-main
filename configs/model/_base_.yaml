@@ -27,7 +27,7 @@ loss_scales:
   policy: 1.0
   value: 1.0
   repval: 0.3
-  cpc: ${cpc.weight}
+  cpc: ${model.cpc.weight}
 
 cpc:
   weight: 1.0

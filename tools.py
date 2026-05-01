@@ -87,6 +87,16 @@ def weight_init_(m, fan_type="in"):
     if weight.numel() == 0:
         return
 
+    # Norm-like layers often have 1D affine parameters where fan-in/out
+    # are undefined. Use identity scale initialization for those weights.
+    if weight.ndim < 2:
+        with torch.no_grad():
+            weight.fill_(1.0)
+            bias = getattr(m, "bias", None)
+            if bias is not None:
+                bias.fill_(0.0)
+        return
+
     # This is a torch private API, but widely used and stable.
     in_num, out_num = nn_init._calculate_fan_in_and_fan_out(weight)
 

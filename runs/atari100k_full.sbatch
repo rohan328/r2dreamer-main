@@ -2,12 +2,12 @@
 #SBATCH --job-name=atari100k_full
 #SBATCH --partition=gpuql
 #SBATCH --gres=gpu:h100:1
-#SBATCH --cpus-per-task=8
+#SBATCH --ntasks=1
+#SBATCH --cpus-per-task=32
 #SBATCH --mem=64G
 #SBATCH --time=24:00:00
 #SBATCH --array=0-779%20
-#SBATCH --output=slurm-%x-%A_%a.out
-#SBATCH --error=slurm-%x-%A_%a.err
+#SBATCH --output=logs/slurm-%x-%A_%a.out
 
 set -euo pipefail
 
@@ -24,7 +24,7 @@ export PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True
 # ---------- Sweep settings ----------
 DATE="$(date +%Y%m%d)"
 SEED_START=0
-SEED_END=400
+SEED_END=200
 SEED_STEP=100
 
 BACKBONES=(
@@ -32,8 +32,8 @@ BACKBONES=(
   "s4"
   "s5"
   "mamba2"
-  "transformer"
-  "transformer_cpc"
+  # "transformer"
+  # "transformer_cpc"
 )
 
 TASKS=(
@@ -47,22 +47,22 @@ TASKS=(
   "atari_breakout"
   "atari_chopper_command"
   "atari_crazy_climber"
-  "atari_demon_attack"
-  "atari_freeway"
-  "atari_frostbite"
-  "atari_gopher"
-  "atari_hero"
-  "atari_jamesbond"
-  "atari_kangaroo"
-  "atari_krull"
-  "atari_kung_fu_master"
-  "atari_ms_pacman"
-  "atari_pong"
-  "atari_private_eye"
-  "atari_qbert"
-  "atari_road_runner"
-  "atari_seaquest"
-  "atari_up_n_down"
+  # "atari_demon_attack"
+  # "atari_freeway"
+  # "atari_frostbite"
+  # "atari_gopher"
+  # "atari_hero"
+  # "atari_jamesbond"
+  # "atari_kangaroo"
+  # "atari_krull"
+  # "atari_kung_fu_master"
+  # "atari_ms_pacman"
+  # "atari_pong"
+  # "atari_private_eye"
+  # "atari_qbert"
+  # "atari_road_runner"
+  # "atari_seaquest"
+  # "atari_up_n_down"
 )
 
 SEEDS_PER_TASK=$(( (SEED_END - SEED_START) / SEED_STEP + 1 ))

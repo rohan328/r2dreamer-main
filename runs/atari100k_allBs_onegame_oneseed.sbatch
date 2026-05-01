@@ -6,8 +6,10 @@
 #SBATCH --cpus-per-task=32
 #SBATCH --mem=64G
 #SBATCH --time=24:00:00
-#SBATCH --array=0-5%6
-#SBATCH --exclusive
+# One array task at a time avoids two jobs landing on the same node when
+# Slurm cannot reserve a whole node (no --exclusive on this cluster).
+# Raise % (e.g. %3) only if you confirm each task gets its own GPU cleanly.
+#SBATCH --array=0-5%4
 #SBATCH --output=logs/slurm-%x-%A_%a.out
 
 set -euo pipefail
